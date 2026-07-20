@@ -1,42 +1,113 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { getTopics } from "../../api/topicsApi";
+import { createTrail } from "../../api/trailApi";
 import PageLayout from "../../components/layout/PageLayout";
 import styles from "./Topics.module.css";
 
-const mockTopics = [
-  { id: 1, title: "Python Fundamentals", icon: "🐍", category: "Programming", level: "Beginner", modules: 8 },
-  { id: 2, title: "Data Structures & Algorithms", icon: "🧩", category: "Computer Science", level: "Intermediate", modules: 12 },
-  { id: 3, title: "React Development", icon: "⚛️", category: "Web Development", level: "Intermediate", modules: 10 },
-  { id: 4, title: "Machine Learning", icon: "🤖", category: "AI & ML", level: "Advanced", modules: 15 },
-  { id: 5, title: "Database Design", icon: "🗄️", category: "Backend", level: "Beginner", modules: 7 },
-  { id: 6, title: "System Design", icon: "🏗️", category: "Architecture", level: "Advanced", modules: 9 },
-];
-
 const levelColors = {
-  Beginner: "#16a34a",
-  Intermediate: "#d97706",
-  Advanced: "#dc2626",
+  beginner: "#16a34a",
+  intermediate: "#d97706",
+  advanced: "#dc2626",
+};
+
+const levelLabels = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
 };
 
 function Topics() {
   const [search, setSearch] = useState("");
-  const navigate = useNavigate();
+  const [topics, setTopics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [creatingTrailId, setCreatingTrailId] = useState(null);
 
-  const filtered = mockTopics.filter((topic) =>
-    topic.title.toLowerCase().includes(search.toLowerCase()) ||
-    topic.category.toLowerCase().includes(search.toLowerCase())
+  const navigate = useNavigate();
+  const { token } = useAuth();
+
+  // ── Fetch topics from API ────────────────────────────────────────
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getTopics();
+        setTopics(data);
+      } catch (err) {
+        console.error("Failed to load topics:", err);
+        setError(err.response?.data?.message || "Failed to load topics.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopics();
+  }, []);
+
+  const filtered = topics.filter(
+    (topic) =>
+      topic.title.toLowerCase().includes(search.toLowerCase()) ||
+      (topic.description || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleTopicClick = (topicId) => {
-    navigate(`/trail/${topicId}`);
+  // ── Create trail & navigate ──────────────────────────────────────
+  const handleTopicClick = async (topic) => {
+    if (creatingTrailId) return; // prevent double-clicks
+
+    try {
+      setCreatingTrailId(topic._id);
+      const data = await createTrail(topic._id, token);
+      navigate(`/trail/${data.trail._id}`);
+    } catch (err) {
+      console.error("Failed to create trail:", err);
+      alert(
+        err.response?.data?.message ||
+          "Failed to start trail. Please try again."
+      );
+    } finally {
+      setCreatingTrailId(null);
+    }
   };
+
+  // ── Loading state ────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <PageLayout>
+        <div className={styles.page}>
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner} />
+            <p className={styles.loadingText}>Loading topics…</p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // ── Error state ──────────────────────────────────────────────────
+  if (error) {
+    return (
+      <PageLayout>
+        <div className={styles.page}>
+          <div className={styles.loadingContainer}>
+            <span style={{ fontSize: "48px" }}>⚠️</span>
+            <p className={styles.loadingText}>{error}</p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
       <div className={styles.page}>
         <div className={styles.header}>
           <h2 className={styles.title}>Choose a Topic</h2>
-          <p className={styles.subtitle}>Select a topic to generate your personalized learning trail</p>
+          <p className={styles.subtitle}>
+            Select a topic to generate your personalized learning trail
+          </p>
         </div>
 
         <input
@@ -48,33 +119,52 @@ function Topics() {
         />
 
         <div className={styles.grid}>
-          {filtered.map((topic) => (
-            <div
-              key={topic.id}
-              className={styles.card}
-              onClick={() => handleTopicClick(topic.id)}
-            >
-              <div className={styles.icon}>{topic.icon}</div>
-              <div className={styles.info}>
-                <h3 className={styles.topicTitle}>{topic.title}</h3>
-                <p className={styles.category}>{topic.category}</p>
-                <div className={styles.meta}>
-                  <span
-                    className={styles.level}
-                    style={{ color: levelColors[topic.level] }}
-                  >
-                    ● {topic.level}
-                  </span>
-                  <span className={styles.modules}>{topic.modules} modules</span>
+          {filtered.map((topic) => {
+            const isCreating = creatingTrailId === topic._id;
+
+            return (
+              <div
+                key={topic._id}
+                className={`${styles.card} ${isCreating ? styles.cardCreating : ""}`}
+                onClick={() => handleTopicClick(topic)}
+                style={{ pointerEvents: isCreating ? "none" : "auto" }}
+              >
+                <div className={styles.icon}>{topic.icon || "📘"}</div>
+                <div className={styles.info}>
+                  <h3 className={styles.topicTitle}>{topic.title}</h3>
+                  <p className={styles.category}>
+                    {topic.description || "Learning Trail"}
+                  </p>
+                  <div className={styles.meta}>
+                    <span
+                      className={styles.level}
+                      style={{ color: levelColors[topic.level] || "#4f46e5" }}
+                    >
+                      ● {levelLabels[topic.level] || topic.level}
+                    </span>
+                    <span className={styles.modules}>
+                      {topic.concepts?.length || 0} concepts
+                    </span>
+                  </div>
                 </div>
+                {isCreating && (
+                  <div className={styles.creatingOverlay}>
+                    <div className={styles.spinnerSmall} />
+                    <span>Generating…</span>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {filtered.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <div className={styles.empty}>
-            <p>No topics found for "{search}"</p>
+            {topics.length === 0 ? (
+              <p>No topics available yet. Ask an admin to create topics.</p>
+            ) : (
+              <p>No topics found for "{search}"</p>
+            )}
           </div>
         )}
       </div>

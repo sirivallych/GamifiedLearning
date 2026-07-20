@@ -21,6 +21,18 @@ exports.createTrail = async (req, res) => {
       return res.status(400).json({ message: 'This topic has no concepts defined yet' });
     }
 
+    // ── Return existing trail if user already started one for this topic ──
+    const existing = await Trail.findOne({
+      user: req.user._id,
+      topic: topic._id,
+      status: { $in: ['active', 'generating'] },
+    });
+
+    if (existing) {
+      const modules = await Module.find({ trail: existing._id }).sort({ order: 1 });
+      return res.status(200).json({ trail: existing, modules });
+    }
+
     const trail = await Trail.create({
       user: req.user._id,
       topic: topic._id,

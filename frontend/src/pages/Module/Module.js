@@ -1,67 +1,107 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { getModuleById, getModuleContent } from "../../api/moduleApi";
 import PageLayout from "../../components/layout/PageLayout";
 import styles from "./Module.module.css";
 
-const mockModules = {
-  101: {
-    title: "Introduction to Python",
-    trailTitle: "Python Fundamentals",
-    duration: "30 mins",
-    icon: "🐍",
-    objective: "Understand what Python is, why it is used, and how to set up your environment.",
-    keyPoints: [
-      "Python is a high-level, interpreted programming language",
-      "It is widely used in web development, data science, AI and automation",
-      "Python uses indentation to define code blocks",
-      "Variables do not need explicit type declarations",
-      "Python has a large standard library and active community",
-    ],
-    summary: "Python is one of the most beginner-friendly languages. Its clean syntax and readability make it an ideal first language. In this module you got an overview of Python's history, use cases, and basic environment setup.",
-  },
-  102: {
-    title: "Variables & Data Types",
-    trailTitle: "Python Fundamentals",
-    duration: "45 mins",
-    icon: "🐍",
-    objective: "Learn how to declare variables and work with Python's core data types.",
-    keyPoints: [
-      "Python supports int, float, string, bool and complex types",
-      "Variables are dynamically typed — no need to declare type",
-      "Strings can be defined with single or double quotes",
-      "Type conversion is done using int(), str(), float() functions",
-      "The type() function returns the data type of a variable",
-    ],
-    summary: "Understanding data types is fundamental to programming. Python's dynamic typing makes it flexible but requires careful handling to avoid type errors in larger programs.",
-  },
-  201: {
-    title: "Arrays & Strings",
-    trailTitle: "Data Structures & Algorithms",
-    duration: "45 mins",
-    icon: "🧩",
-    objective: "Understand array operations and string manipulation techniques.",
-    keyPoints: [
-      "Arrays store elements of the same type in contiguous memory",
-      "Python lists act as dynamic arrays",
-      "String indexing starts at 0",
-      "Slicing allows extracting substrings using [start:end]",
-      "Common operations: append, insert, delete, search",
-    ],
-    summary: "Arrays and strings are the most fundamental data structures. Mastering their operations is essential for solving most algorithmic problems efficiently.",
-  },
+const difficultyConfig = {
+  beginner: { icon: "🌱", label: "Beginner", color: "#16a34a" },
+  intermediate: { icon: "⚡", label: "Intermediate", color: "#f59e0b" },
+  advanced: { icon: "🔥", label: "Advanced", color: "#ef4444" },
 };
 
 function Module() {
   const { moduleId } = useParams();
   const navigate = useNavigate();
-  const module = mockModules[moduleId];
+  const { token } = useAuth();
 
-  if (!module) {
+  const [moduleMeta, setModuleMeta] = useState(null);
+  const [content, setContent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // ── 1. Fetch module metadata ─────────────────────────────────────
+  useEffect(() => {
+    const fetchModule = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getModuleById(moduleId, token);
+        setModuleMeta(data);
+      } catch (err) {
+        console.error("Failed to load module:", err);
+        setError(err.response?.data?.message || "Failed to load module.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (moduleId && token) fetchModule();
+  }, [moduleId, token]);
+
+  // ── 2. Fetch AI-generated content once metadata is loaded ────────
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setContentLoading(true);
+        const res = await getModuleContent(moduleId, token);
+        setContent(res.data);
+      } catch (err) {
+        console.error("Failed to load content:", err);
+        // Content generation may fail — we still show metadata
+        setContent(null);
+      } finally {
+        setContentLoading(false);
+      }
+    };
+
+    if (moduleMeta && token) fetchContent();
+  }, [moduleMeta, moduleId, token]);
+
+  // ── Loading state ────────────────────────────────────────────────
+  if (loading) {
     return (
       <PageLayout>
-        <div>Module not found.</div>
+        <div className={styles.page}>
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner} />
+            <p className={styles.loadingText}>Loading module…</p>
+          </div>
+        </div>
       </PageLayout>
     );
   }
+
+  // ── Error state ──────────────────────────────────────────────────
+  if (error) {
+    return (
+      <PageLayout>
+        <div className={styles.page}>
+          <div className={styles.errorContainer}>
+            <span className={styles.errorIcon}>⚠️</span>
+            <p className={styles.errorText}>{error}</p>
+            <button className={styles.retryBtn} onClick={() => navigate(-1)}>
+              ← Go Back
+            </button>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (!moduleMeta) {
+    return (
+      <PageLayout>
+        <div className={styles.page}>
+          <div>Module not found.</div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  const diffConfig = difficultyConfig[moduleMeta.difficulty] || difficultyConfig.beginner;
 
   return (
     <PageLayout>
@@ -72,42 +112,109 @@ function Module() {
           <button className={styles.backBtn} onClick={() => navigate(-1)}>
             ← Back
           </button>
-          <p className={styles.trailTitle}>{module.trailTitle}</p>
+          <span
+            className={styles.difficultyBadge}
+            style={{ backgroundColor: diffConfig.color + "18", color: diffConfig.color }}
+          >
+            {diffConfig.icon} {diffConfig.label}
+          </span>
         </div>
 
         {/* Module Title */}
         <div className={styles.titleRow}>
-          <span className={styles.icon}>{module.icon}</span>
+          <div className={styles.icon}>📘</div>
           <div>
-            <h2 className={styles.title}>{module.title}</h2>
-            <p className={styles.duration}>⏱ {module.duration}</p>
+            <h2 className={styles.title}>{moduleMeta.title}</h2>
+            <p className={styles.duration}>
+              ⏱ {moduleMeta.duration} mins &nbsp;·&nbsp; {moduleMeta.concept}
+            </p>
           </div>
         </div>
 
-        {/* Objective */}
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>🎯 Learning Objective</h3>
-          <p className={styles.cardText}>{module.objective}</p>
-        </div>
+        {/* AI-generated content area */}
+        {contentLoading ? (
+          <div className={styles.contentLoadingContainer}>
+            <div className={styles.spinner} />
+            <p className={styles.loadingText}>
+              Generating personalised content…
+            </p>
+            <p className={styles.loadingSubText}>
+              This may take a moment on first visit
+            </p>
+          </div>
+        ) : content ? (
+          <>
+            {/* Introduction */}
+            {content.introduction && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>📖 Introduction</h3>
+                <p className={styles.cardText}>{content.introduction}</p>
+              </div>
+            )}
 
-        {/* Key Points */}
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>💡 Key Concepts</h3>
-          <ul className={styles.keyPoints}>
-            {module.keyPoints.map((point, index) => (
-              <li key={index} className={styles.keyPoint}>
-                <span className={styles.bullet}>→</span>
-                <span>{point}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+            {/* Objective */}
+            {content.objective && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>🎯 Learning Objective</h3>
+                <p className={styles.cardText}>{content.objective}</p>
+              </div>
+            )}
 
-        {/* Summary */}
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>📝 Summary</h3>
-          <p className={styles.cardText}>{module.summary}</p>
-        </div>
+            {/* Main Content */}
+            {content.content && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>📚 Content</h3>
+                <div className={styles.cardText} style={{ whiteSpace: "pre-wrap" }}>
+                  {content.content}
+                </div>
+              </div>
+            )}
+
+            {/* Key Points */}
+            {content.keyPoints && content.keyPoints.length > 0 && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>💡 Key Concepts</h3>
+                <ul className={styles.keyPoints}>
+                  {content.keyPoints.map((point, index) => (
+                    <li key={index} className={styles.keyPoint}>
+                      <span className={styles.bullet}>→</span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Examples */}
+            {content.examples && content.examples.length > 0 && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>🧪 Examples</h3>
+                <ul className={styles.keyPoints}>
+                  {content.examples.map((example, index) => (
+                    <li key={index} className={styles.keyPoint}>
+                      <span className={styles.bullet}>•</span>
+                      <span>{example}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Summary */}
+            {content.summary && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>📝 Summary</h3>
+                <p className={styles.cardText}>{content.summary}</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className={styles.card}>
+            <p className={styles.cardText} style={{ textAlign: "center", color: "#94a3b8" }}>
+              Content could not be generated. Please try again later.
+            </p>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className={styles.actions}>
@@ -118,11 +225,11 @@ function Module() {
             📖 View Full Notes
           </button>
           <button
-  className={styles.quizBtn}
-  onClick={() => navigate(`/quiz/${moduleId}`)}
->
-  🧠 Start Quiz
-</button>
+            className={styles.quizBtn}
+            onClick={() => navigate(`/quiz/${moduleId}`)}
+          >
+            🧠 Start Quiz
+          </button>
         </div>
 
       </div>

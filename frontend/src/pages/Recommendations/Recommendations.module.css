@@ -7,8 +7,9 @@
 /* Header */
 .header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
 }
 
 .title {
@@ -20,6 +21,49 @@
 .subtitle {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  margin-top: var(--space-xs);
+}
+
+/* Refresh Button */
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+  background-color: #f5f4ff;
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refreshIcon {
+  font-size: 16px;
+  display: inline-block;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Sections */
@@ -50,7 +94,173 @@
   border-radius: 999px;
 }
 
-/* Weak Concepts */
+/* ── Loading Skeleton ────────────────────────────────────────────── */
+.skeletonHeader {
+  height: 24px;
+  width: 200px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--color-border) 25%, #f1f5f9 50%, var(--color-border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.skeletonCard {
+  height: 80px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--color-border) 25%, #f1f5f9 50%, var(--color-border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Error State ─────────────────────────────────────────────────── */
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+  gap: var(--space-md);
+}
+
+.errorIcon {
+  font-size: 48px;
+}
+
+.errorMessage {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  max-width: 400px;
+}
+
+.retryBtn {
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  transition: transform var(--transition-fast);
+}
+
+.retryBtn:hover {
+  transform: translateY(-1px);
+}
+
+/* ── Error Banner (inline) ───────────────────────────────────────── */
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+}
+
+.dismissBtn {
+  background: none;
+  border: none;
+  color: var(--color-danger);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  padding: 0 var(--space-xs);
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.dismissBtn:hover {
+  opacity: 1;
+}
+
+/* ── Empty Page State ────────────────────────────────────────────── */
+.emptyPageState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+  gap: var(--space-md);
+  background-color: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.emptyPageIcon {
+  font-size: 56px;
+}
+
+.emptyPageTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.emptyPageText {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+.exploreBtn {
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  transition: transform var(--transition-fast);
+  margin-top: var(--space-sm);
+}
+
+.exploreBtn:hover {
+  transform: translateY(-1px);
+}
+
+/* ── Empty Section State ─────────────────────────────────────────── */
+.emptySection {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-md);
+}
+
+.emptySectionIcon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.emptySectionText {
+  font-size: var(--font-size-sm);
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+/* ── Weak Concepts ───────────────────────────────────────────────── */
 .weakList {
   display: flex;
   flex-direction: column;
@@ -130,7 +340,7 @@
   color: var(--color-text-muted);
 }
 
-/* Revision */
+/* ── Revision ────────────────────────────────────────────────────── */
 .revisionList {
   display: flex;
   flex-direction: column;
@@ -204,7 +414,7 @@
   font-weight: 700;
 }
 
-/* Next Topics */
+/* ── Next Topics ─────────────────────────────────────────────────── */
 .nextList {
   display: flex;
   flex-direction: column;
@@ -277,6 +487,15 @@
   font-weight: 600;
   color: var(--color-primary);
   background-color: #eeecff;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 999px;
+}
+
+.confidenceBadge {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-success);
+  background-color: #f0fdf4;
   padding: var(--space-xs) var(--space-sm);
   border-radius: 999px;
 }
