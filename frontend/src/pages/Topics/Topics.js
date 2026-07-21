@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getTopics } from "../../api/topicsApi";
 import { createTrail } from "../../api/trailApi";
@@ -27,6 +27,9 @@ function Topics() {
 
   const navigate = useNavigate();
   const { token } = useAuth();
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get("highlight");
+  const highlightRef = useRef(null);
 
   // ── Fetch topics from API ────────────────────────────────────────
   useEffect(() => {
@@ -46,6 +49,13 @@ function Topics() {
 
     fetchTopics();
   }, []);
+
+  // Auto-scroll to highlighted topic from recommendations
+  useEffect(() => {
+    if (highlightId && highlightRef.current && !loading) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightId, loading]);
 
   const filtered = topics.filter(
     (topic) =>
@@ -125,7 +135,8 @@ function Topics() {
             return (
               <div
                 key={topic._id}
-                className={`${styles.card} ${isCreating ? styles.cardCreating : ""}`}
+                ref={topic._id === highlightId ? highlightRef : null}
+                className={`${styles.card} ${isCreating ? styles.cardCreating : ""} ${topic._id === highlightId ? styles.cardHighlighted : ""}`}
                 onClick={() => handleTopicClick(topic)}
                 style={{ pointerEvents: isCreating ? "none" : "auto" }}
               >

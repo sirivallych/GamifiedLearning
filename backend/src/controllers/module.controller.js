@@ -4,6 +4,28 @@ const { getOrGenerateContent } = require('../services/moduleContent.service');
 const { getOrGenerateFullNotes } = require('../services/fullNotes.service');
 const { ParseError } = require('../services/ai/responseParser');
 
+// @desc    Get all modules for the logged-in user (or all if admin)
+// @route   GET /modules
+// @access  Private
+exports.getAllModules = async (req, res) => {
+  try {
+    let modules;
+    if (req.user.role === 'admin') {
+      modules = await Module.find().populate('trail', 'title topic').sort({ createdAt: -1 });
+    } else {
+      const userTrails = await Trail.find({ user: req.user._id }).select('_id');
+      const trailIds = userTrails.map((t) => t._id);
+      modules = await Module.find({ trail: { $in: trailIds } })
+        .populate('trail', 'title topic')
+        .sort({ createdAt: -1 });
+    }
+
+    res.status(200).json(modules);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // @desc    Get a single module's static metadata
 // @route   GET /modules/:id
 // @access  Private

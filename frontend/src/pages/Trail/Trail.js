@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getTrailById } from "../../api/trailApi";
-import PageLayout from "../../components/layout/PageLayout";
-import { getTrailById, generateNextModule } from "../../api/trailApi";
 import { getMyProgress } from "../../api/progressApi";
+import PageLayout from "../../components/layout/PageLayout";
 import styles from "./Trail.module.css";
+
 
 const statusConfig = {
   completed: { icon: "✅", label: "Completed", color: "#16a34a" },
@@ -45,6 +44,7 @@ function Trail() {
 
     if (trailId && token) fetchTrail();
   }, [trailId, token]);
+  
 
   // ── Loading state ────────────────────────────────────────────────
   if (loading) {
@@ -150,14 +150,12 @@ function Trail() {
           <div className={styles.progressBox}>
             <p className={styles.progressLabel}>{progress}% Generated</p>
             <div className={styles.progressBar}>
-              <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div className={styles.progressSub}>
-              {completedCount} of {totalCount} modules done
+              <div className={styles.progressFill} style={{ width: `${progress}%` }} />
             </div>
             <p className={styles.progressSub}>
               {modules.length} of {totalConcepts} modules generated
             </p>
+
           </div>
         </div>
 

@@ -39,3 +39,10 @@ export const generateNextModule = async (trailId, token) => {
   );
   return response.data;
 };
+
+export const getMyTrails = async (token) => {
+  const response = await axios.get(`${API_BASE_URL}/trails`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};

@@ -59,7 +59,7 @@ exports.createTrail = async (req, res) => {
         sections: ai.sections,
         duration: ai.duration,
         difficulty: ai.difficulty,
-        order: existingModules.length,
+        order: 0,
       });
 
       await Progress.create({
@@ -70,13 +70,14 @@ exports.createTrail = async (req, res) => {
       });
 
       await Mastery.findOneAndUpdate(
-        { user: req.user._id, topic: trail.topic._id, concept: nextConcept.name },
+        { user: req.user._id, topic: topic._id, concept: firstConcept.name },
         { $setOnInsert: { beginner: 0.5, intermediate: 0.5, advanced: 0.5, currentDifficulty: 'beginner' } },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
 
-      return res.status(201).json({ module });
+      return res.status(201).json({ trail, modules: [module], module });
     } catch (aiErr) {
+      console.error('[trail.controller] createTrail error:', aiErr);
       return res.status(502).json({ message: 'Module generation failed. Please try again.' });
     }
   } catch (err) {

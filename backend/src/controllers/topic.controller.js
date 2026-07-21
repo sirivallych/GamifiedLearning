@@ -48,7 +48,7 @@ exports.getTopicById = async (req, res) => {
 exports.updateTopic = async (req, res) => {
   try {
     const topic = await Topic.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
     if (!topic) return res.status(404).json({ message: 'Topic not found' });
