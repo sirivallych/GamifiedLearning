@@ -19,10 +19,10 @@ const levelLabels = {
 };
 
 function Topics() {
-  const [search, setSearch] = useState("");
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
   const [creatingTrailId, setCreatingTrailId] = useState(null);
 
   const navigate = useNavigate();

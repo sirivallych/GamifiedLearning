@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getMyProgress } from "../../api/progressApi";
 import PageLayout from "../../components/layout/PageLayout";
+import { useAuth } from "../../context/AuthContext";
+import { getMyTrails } from "../../api/trailApi";
 import styles from "./Dashboard.module.css";
 
 function Dashboard() {
@@ -84,6 +86,7 @@ function Dashboard() {
                 : "Start learning by choosing a topic! 🚀"}
             </p>
           </div>
+
           <div className={styles.statsRow}>
             <div className={styles.statItem}>
               <span className={styles.statValue}>📚 {totalModulesCompleted}</span>
@@ -97,7 +100,6 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Active Trails */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>Active Trails</h3>

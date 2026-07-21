@@ -1,9 +1,12 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getModuleById, getModuleContent } from "../../api/moduleApi";
 import PageLayout from "../../components/layout/PageLayout";
+import { getModuleById } from "../../api/moduleApi";
 import styles from "./Module.module.css";
+
 
 const difficultyConfig = {
   beginner: { icon: "🌱", label: "Beginner", color: "#16a34a" },
@@ -33,11 +36,11 @@ function Module() {
       } catch (err) {
         console.error("Failed to load module:", err);
         setError(err.response?.data?.message || "Failed to load module.");
+
       } finally {
         setLoading(false);
       }
     };
-
     if (moduleId && token) fetchModule();
   }, [moduleId, token]);
 
@@ -128,6 +131,7 @@ function Module() {
             <p className={styles.duration}>
               ⏱ {moduleMeta.duration} mins &nbsp;·&nbsp; {moduleMeta.concept}
             </p>
+
           </div>
         </div>
 

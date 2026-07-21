@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getFullNotes } from "../../api/moduleApi";
 import PageLayout from "../../components/layout/PageLayout";
+import { getModuleById } from "../../api/moduleApi";
 import styles from "./Notes.module.css";
 
 function Notes() {

@@ -26,3 +26,16 @@ export const getTrailById = async (trailId, token) => {
   });
   return response.data;
 };
+
+/**
+ * Generate the next module in a trail (triggered by clicking a concept).
+ * Returns: { trail, module: newModule }
+ */
+export const generateNextModule = async (trailId, token) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/trails/${trailId}/next-module`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};

@@ -5,6 +5,9 @@ const Progress = require('../models/Progress');
 const Mastery = require('../models/Mastery');
 const { generateModuleContent } = require('../services/ai.service');
 
+// @desc    Create (or fetch existing) trail for a topic — no AI call, no modules yet
+// @route   POST /trails
+// @access  Private
 exports.createTrail = async (req, res) => {
   try {
     const { topicId } = req.body;
@@ -53,9 +56,10 @@ exports.createTrail = async (req, res) => {
         objective: ai.objective,
         keyPoints: ai.keyPoints,
         summary: ai.summary,
+        sections: ai.sections,
         duration: ai.duration,
         difficulty: ai.difficulty,
-        order: 0,
+        order: existingModules.length,
       });
 
       await Progress.create({
@@ -66,28 +70,67 @@ exports.createTrail = async (req, res) => {
       });
 
       await Mastery.findOneAndUpdate(
-        { user: req.user._id, topic: topic._id, concept: firstConcept.name },
+        { user: req.user._id, topic: trail.topic._id, concept: nextConcept.name },
         { $setOnInsert: { beginner: 0.5, intermediate: 0.5, advanced: 0.5, currentDifficulty: 'beginner' } },
         { upsert: true, new: true }
       );
 
-      trail.status = 'active';
-      await trail.save();
-
-      return res.status(201).json({ trail, modules: [module] });
+      return res.status(201).json({ module });
     } catch (aiErr) {
-      trail.status = 'failed';
-      await trail.save();
-      return res.status(502).json({
-        message: 'Trail generation failed. Please try again.',
-        trailId: trail._id,
-      });
+      return res.status(502).json({ message: 'Module generation failed. Please try again.' });
     }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+// @desc    Get all trails for the logged-in user
+// @route   GET /trails
+// @access  Private
+exports.getMyTrails = async (req, res) => {
+  try {
+    const trails = await Trail.find({ user: req.user._id })
+      .populate('topic', 'title icon level')
+      .sort({ createdAt: -1 });
+
+    const progressCounts = await Progress.aggregate([
+      { $match: { user: req.user._id, trail: { $in: trails.map((t) => t._id) } } },
+      {
+        $group: {
+          _id: '$trail',
+          total: { $sum: 1 },
+          completed: { $sum: { $cond: [{ $eq: ['$completionStatus', 'completed'] }, 1, 0] } },
+        },
+      },
+    ]);
+
+    const countsMap = new Map(progressCounts.map((p) => [p._id.toString(), p]));
+
+    const trailsWithProgress = trails.map((trail) => {
+      const counts = countsMap.get(trail._id.toString()) || { total: 0, completed: 0 };
+      const progressPercent = counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0;
+
+      return {
+        _id: trail._id,
+        title: trail.title,
+        status: trail.status,
+        topic: trail.topic,
+        progressPercent,
+        modulesCompleted: counts.completed,
+        modulesTotal: counts.total,
+        updatedAt: trail.updatedAt,
+      };
+    });
+
+    res.status(200).json(trailsWithProgress);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Get trail details
+// @route   GET /trails/:id
+// @access  Private
 exports.getTrailById = async (req, res) => {
   try {
     const trail = await Trail.findById(req.params.id).populate('topic');
@@ -101,9 +144,22 @@ exports.getTrailById = async (req, res) => {
 
     res.status(200).json({
       trail,
-      modules,                       // real generated modules — full detail
-      concepts: trail.topic.concepts, // full roadmap — name + order only
+      modules,
+      concepts: trail.topic.concepts,
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Check if a trail exists for a given topic (for the logged-in user)
+// @route   GET /trails/topic/:topicId
+// @access  Private
+exports.getTrailByTopic = async (req, res) => {
+  try {
+    const trail = await Trail.findOne({ user: req.user._id, topic: req.params.topicId });
+    if (!trail) return res.status(404).json({ message: 'No trail started for this topic yet' });
+    res.status(200).json(trail);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

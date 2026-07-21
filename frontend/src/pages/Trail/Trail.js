@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getTrailById } from "../../api/trailApi";
 import PageLayout from "../../components/layout/PageLayout";
+import { getTrailById, generateNextModule } from "../../api/trailApi";
+import { getMyProgress } from "../../api/progressApi";
 import styles from "./Trail.module.css";
 
 const statusConfig = {
@@ -133,8 +136,6 @@ function Trail() {
   return (
     <PageLayout>
       <div className={styles.page}>
-
-        {/* Trail Header */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <span className={styles.icon}>{topicData.icon || "📘"}</span>
@@ -145,13 +146,14 @@ function Trail() {
               </p>
             </div>
           </div>
+
           <div className={styles.progressBox}>
             <p className={styles.progressLabel}>{progress}% Generated</p>
             <div className={styles.progressBar}>
-              <div
-                className={styles.progressFill}
-                style={{ width: `${progress}%` }}
-              />
+              <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
+            </div>
+            <div className={styles.progressSub}>
+              {completedCount} of {totalCount} modules done
             </div>
             <p className={styles.progressSub}>
               {modules.length} of {totalConcepts} modules generated
@@ -159,8 +161,7 @@ function Trail() {
           </div>
         </div>
 
-        {/* Module List */}
-        <div className={styles.moduleList}>
+        <div>
           <h3 className={styles.sectionTitle}>Modules</h3>
           {roadmap.map((item, index) => {
             const config = statusConfig[item.status] || statusConfig.locked;

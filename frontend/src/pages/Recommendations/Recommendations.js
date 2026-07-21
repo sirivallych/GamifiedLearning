@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getRecommendations, refreshRecommendations } from "../../api/recommendationsApi";
 import PageLayout from "../../components/layout/PageLayout";
+import { getRecommendations } from "../../api/recommendationsApi";
 import styles from "./Recommendations.module.css";
 
 function Recommendations() {

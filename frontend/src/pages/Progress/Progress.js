@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getMyProgress } from "../../api/progressApi";
 import PageLayout from "../../components/layout/PageLayout";
+import { useAuth } from "../../context/AuthContext";
+import { getMyTrails } from "../../api/trailApi";
 import styles from "./Progress.module.css";
 
 function Progress() {
